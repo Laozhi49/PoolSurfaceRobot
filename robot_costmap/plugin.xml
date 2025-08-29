@@ -1,0 +1,8 @@
+<library path="robot_costmap_component">
+  <class 
+    name="robot_costmap::robot_costmap_component" 
+    type="robot_costmap::robot_costmap_component" 
+    base_class_type="rclcpp_components::NodeFactory">
+    <description>Robot Costamp Component</description>
+  </class>
+</library>

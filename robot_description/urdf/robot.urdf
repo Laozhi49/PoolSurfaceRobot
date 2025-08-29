@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<robot name="my_robot">
+
+  <!-- 底盘 -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.6 0.3 0.07"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- IMU -->
+  <link name="imu_link">
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.01"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 相机 -->
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.08 0.05"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 左超声波 -->
+  <link name="leftultrasonic_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.05 0.03"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 右超声波 -->
+  <link name="rightultrasonic_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.05 0.03"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 左电机 -->
+  <link name="leftmotor_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.0375" length="0.075"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 右电机 -->
+  <link name="rightmotor_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.0375" length="0.075"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="base_link"/>
+    <origin xyz="-0.27 0 -0.09" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0.06" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="leftultrasonic_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="leftultrasonic_link"/>
+    <origin xyz="0.27 0.135 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="rightultrasonic_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rightultrasonic_link"/>
+    <origin xyz="0.27 -0.135 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="leftmotor_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="leftmotor_link"/>
+    <origin xyz="-0.25 0.115 -0.08" rpy="0 1.5708 0"/>
+  </joint>
+
+  <joint name="rightmotor_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rightmotor_link"/>
+    <origin xyz="-0.25 -0.115 -0.08" rpy="0 1.5708 0"/>
+  </joint>
+</robot>

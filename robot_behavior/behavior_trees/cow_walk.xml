@@ -1,0 +1,21 @@
+<root BTCPP_format="4">
+  <BehaviorTree ID="CowWalk">
+    <Fallback>
+      <!-- 分支 1：没有障碍就直行 -->
+      <!-- <Sequence>
+        <Inverter>
+          <IsObstacleAhead/>
+        </Inverter>
+        <SetSpeed speed_x="0.2" speed_z_tar="0.0"/>
+      </Sequence> -->
+
+      <!-- 分支 2：有障碍就完整绕行（执行期间不会跳回去） -->
+      <Sequence>
+        <Rotate target_angle="{turn_angle}"/>
+        <MoveDistance distance="0.4" speed="0.2"/>
+        <Rotate target_angle="{turn_angle}"/>
+        <ToggleDirection turn_angle="{turn_angle}"/>
+      </Sequence>
+    </Fallback>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,8 @@
+<library path="robot_planner_component">
+  <class 
+    name="robot_planner::robot_planner_component" 
+    type="robot_planner::robot_planner_component" 
+    base_class_type="rclcpp_components::NodeFactory">
+    <description>Robot planner Component</description>
+  </class>
+</library>

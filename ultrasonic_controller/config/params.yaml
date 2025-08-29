@@ -1,0 +1,5 @@
+ultrasonic_controller:
+  ros__parameters:
+    publish_rate: 10.0
+    max_speed: 0.5
+    safety_distance: 0.3

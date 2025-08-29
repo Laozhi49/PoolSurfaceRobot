@@ -1,0 +1,9 @@
+# Goal
+geometry_msgs/PoseStamped target_pose
+---
+# Result
+nav_msgs/Path path
+bool success
+---
+# Feedback
+float32 progress  # [0.0 ~ 1.0] 搜索进度或探索比例

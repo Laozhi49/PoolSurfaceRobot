@@ -1,0 +1,8 @@
+<library path="pointcloud_to_2dmap_component">
+  <class 
+    name="pointcloud_to_2dmap::PointCloudTo2DMap" 
+    type="pointcloud_to_2dmap::PointCloudTo2DMap" 
+    base_class_type="rclcpp_components::NodeFactory">
+    <description>Converts pointcloud to 2D map</description>
+  </class>
+</library>

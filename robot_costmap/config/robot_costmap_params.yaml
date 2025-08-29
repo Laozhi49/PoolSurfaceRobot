@@ -1,0 +1,6 @@
+robot_costmap_component:
+  ros__parameters:
+    map_topic: "/map"
+    global_costmap_topic: "/global_costmap"
+    publish_frequency: 10.0      # Hz
+    inflation_radius: 0.2        # meters

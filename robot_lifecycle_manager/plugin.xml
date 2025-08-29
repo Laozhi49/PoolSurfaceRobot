@@ -1,0 +1,8 @@
+<library path="robot_lifecycle_manager">
+  <class 
+    name="robot_lifecycle_manager::LifecycleManager" 
+    type="robot_lifecycle_manager::LifecycleManager" 
+    base_class_type="rclcpp_components::NodeFactory">
+    <description>Robot Lifecycle Manager Component</description>
+  </class>
+</library>

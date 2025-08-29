@@ -1,0 +1,8 @@
+<library path="robot_control_component">
+  <class 
+    name="robot_control::RobotControlComponent" 
+    type="robot_control::RobotControlComponent" 
+    base_class_type="rclcpp_components::NodeFactory">
+    <description>Robot Control Component</description>
+  </class>
+</library>

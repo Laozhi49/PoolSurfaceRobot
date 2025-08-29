@@ -1,0 +1,8 @@
+<library path="behavior_tree_component">
+  <class 
+    name="robot_behavior::BehaviorTreeComponent" 
+    type="robot_behavior::BehaviorTreeComponent" 
+    base_class_type="rclcpp_components::NodeFactory">
+    <description>Robot Control Component</description>
+  </class>
+</library>
