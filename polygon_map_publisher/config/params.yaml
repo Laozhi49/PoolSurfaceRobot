@@ -1,0 +1,5 @@
+polygon_map_node:
+  ros__parameters:
+    map_width: 100
+    map_height: 100
+    resolution: 0.05

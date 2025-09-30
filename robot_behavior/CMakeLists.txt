@@ -56,6 +56,12 @@ ament_target_dependencies(compute_path_to_pose_node ${dependencies})
 add_library(follow_path_node SHARED src/action_nodes/follow_path_node.cpp)
 ament_target_dependencies(follow_path_node ${dependencies})
 
+add_library(follow_coverage_node SHARED src/action_nodes/follow_coverage_node.cpp)
+ament_target_dependencies(follow_coverage_node ${dependencies})
+
+add_library(compute_polygon_coverage_path_node SHARED src/action_nodes/compute_polygon_coverage_path_node.cpp)
+ament_target_dependencies(compute_polygon_coverage_path_node ${dependencies})
+
 # 安装插件库
 install(TARGETS
   is_obstacle_ahead
@@ -65,6 +71,8 @@ install(TARGETS
   toggle_direction
   compute_path_to_pose_node
   follow_path_node
+  follow_coverage_node
+  compute_polygon_coverage_path_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -74,6 +82,7 @@ install(TARGETS
 add_library(behavior_tree_component SHARED 
   src/behavior_tree_component.cpp
   src/NavigateToPose_Action.cpp
+  src/NavigateCoveragePath_Action.cpp
 )
 ament_target_dependencies(behavior_tree_component ${dependencies})
 

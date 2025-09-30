@@ -48,13 +48,15 @@ private:
   
   // Parameters
   std::string pointcloud_topic_;
-  std::string pose_topic_;
+  std::string camerapose_topic_;
   std::string map_frame_;
   std::string robot_frame_;
+  std::string map_topic_;
   double map_resolution_;
   double map_width_;
   double map_height_;
   double robot_height_;
+  double camera_height_;
   double obstacle_threshold_;
   
   // TF
@@ -63,15 +65,15 @@ private:
   
   // Subscribers
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr camerapose_sub_;
   
   // Publisher
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   
   // Data
   nav_msgs::msg::OccupancyGrid map_;
-  geometry_msgs::msg::PoseStamped latest_pose_;
-  bool pose_received_;
+  geometry_msgs::msg::PoseStamped latest_camerapose_;
+  bool camerapose_received_;
   bool pointcloud_received_;
 };
 

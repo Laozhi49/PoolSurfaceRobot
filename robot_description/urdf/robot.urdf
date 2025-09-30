@@ -85,10 +85,29 @@
     </visual>
   </link>
 
-  <joint name="camera_joint" type="fixed">
-    <parent link="camera_link"/>
+  <!-- 二维码 -->
+  <link name="aruco_marker_frame">
+    <visual>
+      <geometry>
+        <box size="0.18 0.18 0.03"/>
+      </geometry>
+      <material name="purple">
+        <color rgba="1 0 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 二维码为主 -->
+  <joint name="aruco_marker_joint" type="fixed">
+    <parent link="aruco_marker_frame"/>
     <child link="base_link"/>
-    <origin xyz="-0.27 0 -0.09" rpy="0 0 0"/>
+    <origin xyz="0.0 0 -0.13" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.27 0 0.09" rpy="0 0 0"/>
   </joint>
 
   <joint name="imu_joint" type="fixed">

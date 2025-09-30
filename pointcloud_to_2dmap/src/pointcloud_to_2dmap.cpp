@@ -9,18 +9,20 @@ namespace pointcloud_to_2dmap {
 
 PointCloudTo2DMap::PointCloudTo2DMap(const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode("pointcloud_to_2dmap", options),
-  pose_received_(false),
+  camerapose_received_(false),
   pointcloud_received_(false)
 {
   // Declare parameters
-  this->declare_parameter("pointcloud_topic", "/orb_slam3/points");
-  this->declare_parameter("pose_topic", "/orb_slam3/pose");
+  this->declare_parameter("pointcloud_topic", "/orbslam3/map_points");
+  this->declare_parameter("camerapose_topic", "/orbslam3/camera_pose");
   this->declare_parameter("map_frame", "map");
   this->declare_parameter("robot_frame", "map");
+  this->declare_parameter("map_topic", "/map");
   this->declare_parameter("map_resolution", 0.05);
   this->declare_parameter("map_width", 20.0);
   this->declare_parameter("map_height", 20.0);
   this->declare_parameter("robot_height", 0.5);
+  this->declare_parameter("camera_height", 0.4);
   this->declare_parameter("obstacle_threshold", 0.2);
 }
 
@@ -31,13 +33,15 @@ PointCloudTo2DMap::on_configure(const rclcpp_lifecycle::State &)
   
   // Get parameters
   this->get_parameter("pointcloud_topic", pointcloud_topic_);
-  this->get_parameter("pose_topic", pose_topic_);
+  this->get_parameter("camerapose_topic", camerapose_topic_);
   this->get_parameter("map_frame", map_frame_);
   this->get_parameter("robot_frame", robot_frame_);
+  this->get_parameter("map_topic", map_topic_);
   this->get_parameter("map_resolution", map_resolution_);
   this->get_parameter("map_width", map_width_);
   this->get_parameter("map_height", map_height_);
   this->get_parameter("robot_height", robot_height_);
+  this->get_parameter("camera_height", camera_height_);
   this->get_parameter("obstacle_threshold", obstacle_threshold_);
   
   // Initialize TF
@@ -59,7 +63,7 @@ PointCloudTo2DMap::on_configure(const rclcpp_lifecycle::State &)
 
   // Create publisher (not activated yet)
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    "map", rclcpp::SystemDefaultsQoS());
+    map_topic_, rclcpp::SystemDefaultsQoS());
   
   RCLCPP_INFO(get_logger(), "Configuration completed.");
   return LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -75,8 +79,8 @@ PointCloudTo2DMap::on_activate(const rclcpp_lifecycle::State &)
     pointcloud_topic_, rclcpp::SensorDataQoS(),
     std::bind(&PointCloudTo2DMap::pointCloudCallback, this, _1));
   
-  pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    pose_topic_, rclcpp::SystemDefaultsQoS(),
+  camerapose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+    camerapose_topic_, rclcpp::SystemDefaultsQoS(),
     std::bind(&PointCloudTo2DMap::poseCallback, this, _1));
   
   // Activate publisher
@@ -96,7 +100,7 @@ PointCloudTo2DMap::on_deactivate(const rclcpp_lifecycle::State &)
   
   // Reset subscribers
   pointcloud_sub_.reset();
-  pose_sub_.reset();
+  camerapose_sub_.reset();
   
   RCLCPP_INFO(get_logger(), "Deactivation completed.");
   return LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -112,7 +116,7 @@ PointCloudTo2DMap::on_cleanup(const rclcpp_lifecycle::State &)
   tf_listener_.reset();
   tf_buffer_.reset();
   
-  pose_received_ = false;
+  camerapose_received_ = false;
   pointcloud_received_ = false;
   
   RCLCPP_INFO(get_logger(), "Cleanup completed.");
@@ -129,16 +133,17 @@ PointCloudTo2DMap::on_shutdown(const rclcpp_lifecycle::State & state)
   // Reset everything
   map_pub_.reset();
   pointcloud_sub_.reset();
-  pose_sub_.reset();
+  camerapose_sub_.reset();
   tf_listener_.reset();
   tf_buffer_.reset();
   
   return LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
+// 点云数据回调
 void PointCloudTo2DMap::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  if (!pose_received_) {
+  if (!camerapose_received_) {
     RCLCPP_WARN_THROTTLE(
       get_logger(), *get_clock(), 1000, "No pose received yet. Skipping point cloud.");
     return;
@@ -149,13 +154,14 @@ void PointCloudTo2DMap::pointCloudCallback(const sensor_msgs::msg::PointCloud2::
   pcl::fromROSMsg(*msg, *cloud);
   
   // Process point cloud
-  processPointCloud(cloud, latest_pose_.pose);
+  processPointCloud(cloud, latest_camerapose_.pose);
   pointcloud_received_ = true;
   
   // Update and publish map
   updateMap();
 }
 
+// 摄像头位姿回调
 void PointCloudTo2DMap::poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
   try {
@@ -166,8 +172,8 @@ void PointCloudTo2DMap::poseCallback(const geometry_msgs::msg::PoseStamped::Shar
     geometry_msgs::msg::PoseStamped transformed_pose;
     tf2::doTransform(*msg, transformed_pose, transform);
     
-    latest_pose_ = transformed_pose;
-    pose_received_ = true;
+    latest_camerapose_ = transformed_pose;
+    camerapose_received_ = true;
     
     if (pointcloud_received_) {
       updateMap();
@@ -179,15 +185,15 @@ void PointCloudTo2DMap::poseCallback(const geometry_msgs::msg::PoseStamped::Shar
 
 void PointCloudTo2DMap::processPointCloud(
   const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
-  const geometry_msgs::msg::Pose &robot_pose)
+  const geometry_msgs::msg::Pose &camera_pose)
 {
   // Filter points based on robot height (obstacle detection)
   pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   
   for (const auto &point : cloud->points) {
     // Check if point is within the height range to be considered an obstacle
-    if (point.z > (robot_pose.position.z + robot_height_ - obstacle_threshold_) &&
-        point.z < (robot_pose.position.z + robot_height_ + obstacle_threshold_)) {
+    if (point.z > (camera_pose.position.z - camera_height_) &&
+        point.z < (camera_pose.position.z + robot_height_ - camera_height_)) {
       filtered_cloud->points.push_back(point);
     }
   }

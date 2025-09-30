@@ -20,3 +20,9 @@ ros2 action send_goal /rotation robot_interfaces/action/Rotation "{target_angle:
 # 测试move_distance action
 ros2 action send_goal /move_distance robot_interfaces/action/MoveDistance "{distance: 2.0, speed: 0.5}" --feedback
 
+
+# 调pid参数
+ros2 param set /robot_control_node Kp 2.5
+ros2 param set /robot_control_node Ki 0.1
+ros2 param set /robot_control_node Kd 0.05
+

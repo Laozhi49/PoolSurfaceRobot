@@ -75,10 +75,11 @@ typedef struct ffd
 	double in;
 	double last_in;
 	double out;
+	double Out_Limit;
 }ForwardFeed; 
 
 double forwardfeed(ForwardFeed* ffd,double in);
-void ffdInit(ForwardFeed* ffd,double T1,double T2);
+void ffdInit(ForwardFeed* ffd, double T1, double T2, double Out_Limit);
 
 void pid_init_absolute(PID_AbsoluteType* PID,float kp, float ki, float kd, float I_limit, float Out_Limit);
 float pid_absolute(float Target,float Current,PID_AbsoluteType* PID);

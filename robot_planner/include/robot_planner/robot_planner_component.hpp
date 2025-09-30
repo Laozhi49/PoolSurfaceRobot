@@ -52,10 +52,10 @@ private:
 
   void execute(const std::shared_ptr<GoalHandleComputePathToPose> goal_handle);
 
-  nav_msgs::msg::Path planAStar(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal,
-    const nav_msgs::msg::OccupancyGrid & map);
+  nav_msgs::msg::Path planSmoothPath(
+        const geometry_msgs::msg::PoseStamped & start,
+        const geometry_msgs::msg::PoseStamped & goal,
+        const nav_msgs::msg::OccupancyGrid & costmap);
 
   void publishMarker(const nav_msgs::msg::Path & path);
 

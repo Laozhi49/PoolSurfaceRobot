@@ -21,6 +21,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/MoveDistance.action"
   "action/ComputePathToPose.action"
   "action/FollowPath.action"
+  "action/FollowCoverage.action"
+  "action/ComputePolygonCoveragePath.action"
+  "action/NavigateCoveragePath.action"
   DEPENDENCIES geometry_msgs std_msgs action_msgs nav_msgs
 )
 

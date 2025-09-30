@@ -1,0 +1,8 @@
+<root BTCPP_format="4">
+  <BehaviorTree ID="NavigateCoveragePathTree">
+    <Sequence>
+      <ComputePolygonCoveragePath polygon="{polygon}" coverage_path="{coverage_path}" />
+      <FollowCoverage coverage_path="{coverage_path}" />
+    </Sequence>
+  </BehaviorTree>
+</root>

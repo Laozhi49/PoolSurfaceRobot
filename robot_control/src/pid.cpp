@@ -248,16 +248,21 @@ double forwardfeed(ForwardFeed* ffd,double in)      //in为误差输入量，跟
 	ffd->in = in;
 	ffd->out = 1.2*(ffd->in - ffd->last_in)*ffd->T1+ffd->in*ffd->T2;
 	ffd->last_in = ffd->in;
+    if(ffd->out > ffd->Out_Limit)
+        ffd->out = ffd->Out_Limit;
+    else if(ffd->out < -ffd->Out_Limit)
+        ffd->out = ffd->Out_Limit;
 	return ffd->out;
 }
 
-void ffdInit(ForwardFeed* ffd,double T1,double T2)
+void ffdInit(ForwardFeed* ffd,double T1,double T2, double Out_Limit)
 {
 	ffd->in = 0;
 	ffd->last_in = 0;
 	ffd->out = 0;
     ffd->T1 = T1;
 	ffd->T2 = T2;
+    ffd->Out_Limit = Out_Limit;
 }
 
 /**

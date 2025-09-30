@@ -1,0 +1,7 @@
+coverage_planner_action_server:
+  ros__parameters:
+    robot_radius: 0.3     # 机器人半径（米）
+    step_size: 0.45        # 行距（米）
+    frame_id: "map"       # 输出路径使用的坐标系
+    coverage_planner_action_name: "compute_polygon_coverage_path"
+    coverage_path_topic: "coverage_path_marker"

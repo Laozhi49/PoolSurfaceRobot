@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <cmath>
+#include <limits>
 #include <vector>
 #include <algorithm>
 
@@ -18,10 +19,22 @@ namespace robot_planner
 class AStar_Planner
 {
 public:
-    nav_msgs::msg::Path aStarSearch(
+    std::vector<std::pair<unsigned int, unsigned int>> aStarSearch(
         const geometry_msgs::msg::PoseStamped & start,
         const geometry_msgs::msg::PoseStamped & goal,
         const nav_msgs::msg::OccupancyGrid & costmap);
+
+    nav_msgs::msg::Path toPathMsg(
+        const std::vector<std::pair<unsigned int, unsigned int>> & grid_path,
+        const nav_msgs::msg::OccupancyGrid & costmap);
+
+    std::vector<std::vector<double>> computeDistanceField(
+        const nav_msgs::msg::OccupancyGrid & costmap);
+    
+    std::vector<std::pair<double, double>> smoothPathWithGradientDescent(
+        const std::vector<std::pair<unsigned int, unsigned int>> &grid_path,
+        const std::vector<std::vector<double>> &dist_field,
+        const nav_msgs::msg::OccupancyGrid &costmap);
 
 private:
     struct Node;

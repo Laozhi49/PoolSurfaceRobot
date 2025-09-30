@@ -10,14 +10,18 @@ namespace robot_planner {
 PlannerComponent::PlannerComponent(const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode("robot_planner", options) {
     // Declare parameters with defaults
-    costmap_topic_ = this->declare_parameter<std::string>("costmap_topic_", "/global_costmap");
-    pose_service_name_ = this->declare_parameter<std::string>("pose_service_name", "get_robot_pose");
-    action_name_ = this->declare_parameter<std::string>("action_name", "compute_path_to_pose");
+    this->declare_parameter("costmap_topic", "/global_costmap");
+    this->declare_parameter("pose_service_name", "get_robot_pose");
+    this->declare_parameter("action_name", "compute_path_to_pose");
 }
 
 PlannerComponent::CallbackReturn
 PlannerComponent::on_configure(const rclcpp_lifecycle::State & /*state*/) {
     RCLCPP_INFO(get_logger(), "Configuring robot_planner...");
+    
+    this->get_parameter("costmap_topic", costmap_topic_);
+    this->get_parameter("pose_service_name", pose_service_name_);
+    this->get_parameter("action_name", action_name_);
     
     // auto map_qos = rclcpp::QoS(rclcpp::KeepAll()).transient_local().reliable();
     auto map_qos = rclcpp::QoS(1).transient_local().reliable();
@@ -92,8 +96,8 @@ PlannerComponent::on_shutdown(const rclcpp_lifecycle::State & /*state*/) {
 
 void PlannerComponent::CostmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
     costmap_ = *msg;
-    RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 5000, "Map received: %u x %u, res=%.3f",
-    msg->info.width, msg->info.height, msg->info.resolution);
+    // RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 5000, "Map received: %u x %u, res=%.3f",
+    // msg->info.width, msg->info.height, msg->info.resolution);
 }
 
 rclcpp_action::GoalResponse
@@ -174,7 +178,7 @@ void PlannerComponent::execute(const std::shared_ptr<GoalHandleComputePathToPose
         return;
     }
 
-    auto path = planner_->aStarSearch(start_pose, target_pose, *costmap_);
+    auto path = planSmoothPath(start_pose, target_pose, *costmap_);
     path.header.stamp = now();
 
     publishMarker(path);
@@ -195,30 +199,43 @@ void PlannerComponent::execute(const std::shared_ptr<GoalHandleComputePathToPose
     }
 }
 
-nav_msgs::msg::Path PlannerComponent::planAStar(
-const geometry_msgs::msg::PoseStamped & start,
-const geometry_msgs::msg::PoseStamped & goal,
-const nav_msgs::msg::OccupancyGrid & costmap)
+nav_msgs::msg::Path PlannerComponent::planSmoothPath(
+    const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal,
+    const nav_msgs::msg::OccupancyGrid & costmap)
 {
-    // TODO: 实现你的 A*。这里给一个最小占位实现，仅返回 start->goal 两点的直线插值示意。
-    nav_msgs::msg::Path path;
-    path.header.frame_id = costmap.header.frame_id;
-    path.header.stamp = now();
-
-
-    // 极简占位：生成 10 段直线插值（请替换）
-    const int N = 10;
-    for (int i = 0; i <= N; ++i) {
-        double t = static_cast<double>(i) / N;
-        geometry_msgs::msg::PoseStamped p;
-        p.header = path.header;
-        p.pose.position.x = start.pose.position.x * (1 - t) + goal.pose.position.x * t;
-        p.pose.position.y = start.pose.position.y * (1 - t) + goal.pose.position.y * t;
-        p.pose.position.z = 0.0;
-        p.pose.orientation = goal.pose.orientation; // 简化处理
-        path.poses.push_back(p);
+    nav_msgs::msg::Path smooth_msg;
+    // 1. A* 搜索
+    auto grid_path = planner_->aStarSearch(start, goal, costmap);
+    if (grid_path.empty()) {
+        RCLCPP_WARN(rclcpp::get_logger("planner"), "A* search failed, no path found.");
+        return nav_msgs::msg::Path();
     }
-    return path;
+
+    // smooth_msg = planner_->toPathMsg(grid_path,costmap);
+
+    // 2. 距离场
+    auto dist_field = planner_->computeDistanceField(costmap);
+
+    // 3. 梯度下降平滑
+    auto smooth_path = planner_->smoothPathWithGradientDescent(grid_path, dist_field, costmap);
+
+    // 4. 转换为 nav_msgs::Path
+    smooth_msg.header.frame_id = costmap.header.frame_id;
+    smooth_msg.header.stamp = rclcpp::Clock().now();
+
+    for (auto &p : smooth_path) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.header = smooth_msg.header;
+
+        // 注意：这里假设 smoothPathWithGradientDescent 输出的是 (世界坐标 x,y)
+        pose.pose.position.x = p.first;
+        pose.pose.position.y = p.second;
+        pose.pose.orientation.w = 1.0;
+        smooth_msg.poses.push_back(pose);
+    }
+
+    return smooth_msg;
 }
 
 // path可视化

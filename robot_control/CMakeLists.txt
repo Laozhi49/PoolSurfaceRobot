@@ -15,6 +15,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -30,6 +31,7 @@ add_library(robot_control_component SHARED
   src/action/rotation_action.cpp
   src/action/move_distance_action.cpp
   src/action/follow_path_action.cpp
+  src/action/follow_coverage_action.cpp
 )
 
 target_include_directories(robot_control_component PUBLIC
@@ -44,6 +46,7 @@ ament_target_dependencies(robot_control_component
   rclcpp_components
   sensor_msgs
   geometry_msgs
+  visualization_msgs
   std_msgs
   nav_msgs
   tf2

@@ -69,8 +69,8 @@ class OrbSlam3Sim(Node):
         )
 
 
-        self.pose_pub = self.create_publisher(PoseStamped, '/orb_slam3/pose', qos)
-        self.cloud_pub = self.create_publisher(PointCloud2, '/orb_slam3/points', qos)
+        self.pose_pub = self.create_publisher(PoseStamped, '/orbslam3/camera_pose', qos)
+        self.cloud_pub = self.create_publisher(PointCloud2, '/orbslam3/map_points', qos)
 
 
         self.t = 0.0

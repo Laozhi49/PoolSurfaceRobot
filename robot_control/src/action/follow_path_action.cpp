@@ -45,10 +45,17 @@ void RobotControlComponent::execute_followpath(
 
     const double goal_tolerance = 0.1; // 10cm 停止阈值
 
+    pid_init_absolute(&follow_path_pid, Kp_, Ki_, Kd_, 30.0, 0.8);
+    ffdInit(&follow_path_ffd, 1.0, 0.5, 0.3);
+    pid_init_antiintegral(&follow_path_pid_antiintegral, 2.5, 0.02, 0.5, 1.0, 30.0, 0.8);
+
     while (rclcpp::ok())
     {
         if (goal_handle->is_canceling()) {
             goal_handle->canceled(result);
+            twist.linear.x = 0.0;
+            twist.angular.z = 0.0;
+            cmd_vel_pub_->publish(twist);
             RCLCPP_WARN(get_logger(), "[FollowPath] Goal canceled during execution");
             return;
         }
@@ -95,18 +102,17 @@ geometry_msgs::msg::Twist RobotControlComponent::computeVelocityCommands()
     }
 
     // 2. 找前瞻点
-    double lookahead_distance = 0.5; // 可调参数
-    auto lookahead_point = findLookaheadPoint(local_path, lookahead_distance);
+    double lookahead_distance = 0.25; // 可调参数
+    // auto lookahead_point = findLookaheadPoint(local_path, lookahead_distance);
+    auto err = findLookaheadPoint(local_path, lookahead_distance);
 
-    // 3. Pure Pursuit 控制公式
-    double Ld = std::hypot(lookahead_point.x, lookahead_point.y);
-    if (Ld < 1e-6) {
-        return geometry_msgs::msg::Twist();
-    }
-
-    double linear_vel = 0.2; // 可调参数
-    double curvature = 2.0 * lookahead_point.y / (Ld * Ld);
-    double angular_vel = linear_vel * curvature;
+    // 计算pid
+    double angular_vel = pid_absolute(err.lateral_error*0.25 + err.yaw_error, 0.0, &follow_path_pid)+forwardfeed(&follow_path_ffd, err.yaw_error);
+    // double angular_vel = pid_antiintegral_update(err.lateral_error*0.25 + err.yaw_error*0.5, 0.0, &follow_path_pid_antiintegral);
+    
+    double linear_vel = 0.25;
+    if(abs(angular_vel)>0.1)  // 转弯速度过大时只进行旋转
+      linear_vel = 0;
 
     // 4. 输出速度
     geometry_msgs::msg::Twist cmd_vel;
@@ -115,44 +121,69 @@ geometry_msgs::msg::Twist RobotControlComponent::computeVelocityCommands()
     return cmd_vel;
 }
 
-
-nav_msgs::msg::Path RobotControlComponent::transformPathToBaseLink(const nav_msgs::msg::Path & path)
-{
-    nav_msgs::msg::Path transformed_path;
-    transformed_path.header.frame_id = "base_link";
-
-    geometry_msgs::msg::TransformStamped tf_msg;
-    try {
-        tf_msg = tf_buffer_->lookupTransform(
-            "base_link",
-            path.header.frame_id,  // e.g. "map"
-            tf2::TimePointZero);
-    } catch (tf2::TransformException & ex) {
-        RCLCPP_WARN(this->get_logger(), "Could not transform path: %s", ex.what());
-        return transformed_path;
-    }
-
-    for (auto & pose : path.poses) {
-        geometry_msgs::msg::PoseStamped transformed_pose;
-        tf2::doTransform(pose, transformed_pose, tf_msg);
-        transformed_path.poses.push_back(transformed_pose);
-    }
-    return transformed_path;
-}
-
-geometry_msgs::msg::Point RobotControlComponent::findLookaheadPoint(
+TrackingError RobotControlComponent::findLookaheadPoint(
     const nav_msgs::msg::Path & path, double lookahead_distance)
 {
-    for (auto & pose : path.poses) {
-        double dx = pose.pose.position.x;
-        double dy = pose.pose.position.y;
+    if (path.poses.empty()) {
+        throw std::runtime_error("Path is empty");
+    }
+
+    // 1. 找最近点
+    size_t closest_index = 0;
+    double min_dist = std::hypot(path.poses[0].pose.position.x,
+                                 path.poses[0].pose.position.y);
+
+    for (size_t i = 1; i < path.poses.size(); ++i) {
+        double dx = path.poses[i].pose.position.x;
+        double dy = path.poses[i].pose.position.y;
+        double dist = std::hypot(dx, dy);
+        if (dist < min_dist) {
+            min_dist = dist;
+            closest_index = i;
+        }
+    }
+
+    // 2. 从最近点往后找前瞻点
+    size_t lookahead_index = path.poses.size()-1;
+    for (size_t i = closest_index; i < path.poses.size(); ++i) {
+        double dx = path.poses[i].pose.position.x;
+        double dy = path.poses[i].pose.position.y;
         double dist = std::hypot(dx, dy);
 
         if (dist >= lookahead_distance) {
-            return pose.pose.position; // 已经在 base_link 下了
+            lookahead_index = i;
+            break;
         }
     }
-    return path.poses.back().pose.position; // 没找到就返回终点
+
+    // 3. 横向误差（最近点的 y，带符号）
+    double angle = std::atan2(path.poses[closest_index].pose.position.y, path.poses[closest_index].pose.position.x);
+    if(min_dist<0.05)
+      angle = 0;
+    double lateral_error = angle;
+    // double lateral_error = path.poses[closest_index].pose.position.y;
+
+    // 4. 偏航误差（最近点 → 前瞻点 的方向）
+    double dx = path.poses[lookahead_index].pose.position.x -
+                path.poses[closest_index].pose.position.x;
+    double dy = path.poses[lookahead_index].pose.position.y -
+                path.poses[closest_index].pose.position.y;
+
+    double yaw_error = 0.0;
+    if (std::hypot(dx, dy) > 1e-6) {   // 有效的向量
+        double path_yaw = std::atan2(dy, dx);
+        yaw_error = path_yaw;
+    } else {
+        // 最近点和前瞻点重合 → 已经在终点
+        yaw_error = 0.0;
+    }
+
+    // 5. 返回
+    TrackingError result;
+    result.lateral_error = lateral_error;
+    result.yaw_error = yaw_error;
+    result.lookahead_point = path.poses[lookahead_index].pose.position;
+    return result;
 }
 
 } // namespace robot_control

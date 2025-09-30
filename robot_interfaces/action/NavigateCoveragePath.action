@@ -1,0 +1,8 @@
+# 请求
+geometry_msgs/Point32[] polygon
+---
+# 结果
+bool success
+---
+# 反馈
+float32 progress

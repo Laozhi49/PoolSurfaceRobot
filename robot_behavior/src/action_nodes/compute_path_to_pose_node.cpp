@@ -62,10 +62,25 @@ BT::NodeStatus ComputePathToPoseNode::onRunning()
       if (result_future_.wait_for(0s) == std::future_status::ready)
       {
           auto result = result_future_.get();
+
+          // 确认 goal_id 匹配
+          if (result.goal_id != goal_handle->get_goal_id()) {
+            RCLCPP_WARN(node_->get_logger(), "Received result from old goal, ignoring");
+            result_future_ = std::shared_future<rclcpp_action::Client<ComputePathToPose>::WrappedResult>();
+            return BT::NodeStatus::RUNNING;
+          }
+
           if (result.code == rclcpp_action::ResultCode::SUCCEEDED)
-              return BT::NodeStatus::SUCCESS;
+          {
+            setOutput("path", result.result->path);
+            RCLCPP_INFO(node_->get_logger(), "ComputePath Complished");
+            return BT::NodeStatus::SUCCESS;
+          } 
           else
-              return BT::NodeStatus::FAILURE;
+          {
+            return BT::NodeStatus::FAILURE;
+          }
+            
       }
 
       // 动作还没完成
@@ -81,8 +96,13 @@ void ComputePathToPoseNode::onHalted()
   if (future_goal_handle_.valid()) {
     if (auto goal_handle = future_goal_handle_.get()) {
       client_->async_cancel_goal(goal_handle);
+      // 主动取一次旧结果并丢掉，避免它以后一直冒出来
+      auto throwaway_future = client_->async_get_result(goal_handle);
     }
   }
+  // 清空 future，避免下一次 tick 直接用旧的结果
+  future_goal_handle_ = std::shared_future<rclcpp_action::ClientGoalHandle<ComputePathToPose>::SharedPtr>();
+  result_future_ = std::shared_future<rclcpp_action::Client<ComputePathToPose>::WrappedResult>();
 }
 
 #include "behaviortree_cpp/bt_factory.h"

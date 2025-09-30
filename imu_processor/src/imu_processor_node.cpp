@@ -202,31 +202,31 @@ void IMUProcessorNode::imu_raw_callback(const std_msgs::msg::Float32MultiArray::
   
   // 旋转校正陀螺仪坐标系
   // 原始加速度、角速度
-  Eigen::Vector3f acc_raw(ax, ay, az);
-  Eigen::Vector3f gyro_raw(gx, gy, gz);
+  // Eigen::Vector3f acc_raw(ax, ay, az);
+  // Eigen::Vector3f gyro_raw(gx, gy, gz);
 
-  // 应用旋转修正
-  Eigen::Vector3f acc_fixed = R_ * acc_raw;
-  Eigen::Vector3f gyro_fixed = R_ * gyro_raw;
+  // // 应用旋转修正
+  // Eigen::Vector3f acc_fixed = R_ * acc_raw;
+  // Eigen::Vector3f gyro_fixed = R_ * gyro_raw;
 
-  // 替换原始值
-  ax = acc_fixed.x();
-  ay = acc_fixed.y();
-  az = acc_fixed.z();
+  // // 替换原始值
+  // ax = acc_fixed.x();
+  // ay = acc_fixed.y();
+  // az = acc_fixed.z();
 
-  gx = gyro_fixed.x();
-  gy = gyro_fixed.y();
-  gz = gyro_fixed.z();
+  // gx = gyro_fixed.x();
+  // gy = gyro_fixed.y();
+  // gz = gyro_fixed.z();
 
-  if(calibrate_flag==false)
-    imu_calibrate(gz);
-  else 
+  // if(calibrate_flag==false)
+  //   imu_calibrate(gz);
+  // else 
   {
-    gz = gz - gz_offset;
-    if(fabsf(gz)<0.015f) gz = 0.000f;
+    // gz = gz - gz_offset;
+    // if(fabsf(gz)<0.015f) gz = 0.000f;
 
-    // 运行互补滤波算法
-    IMUupdate(ax, ay, az, gx, gy, gz);
+    // // 运行互补滤波算法
+    // IMUupdate(ax, ay, az, gx, gy, gz);
     
     // 创建IMU消息
     auto imu_msg = std::make_unique<sensor_msgs::msg::Imu>();

@@ -58,6 +58,14 @@ BT::NodeStatus FollowPathNode::onRunning()
       if (result_future_.wait_for(0s) == std::future_status::ready)
       {
           auto result = result_future_.get();
+
+          // 确认 goal_id 匹配
+          if (result.goal_id != goal_handle->get_goal_id()) {
+            RCLCPP_WARN(node_->get_logger(), "Received result from old goal, ignoring");
+            result_future_ = std::shared_future<rclcpp_action::Client<FollowPath>::WrappedResult>();
+            return BT::NodeStatus::RUNNING;
+          }
+
           if (result.code == rclcpp_action::ResultCode::SUCCEEDED)
               return BT::NodeStatus::SUCCESS;
           else
@@ -77,8 +85,12 @@ void FollowPathNode::onHalted()
   if (future_goal_handle_.valid()) {
     if (auto goal_handle = future_goal_handle_.get()) {
       client_->async_cancel_goal(goal_handle);
+      // 主动取一次旧结果并丢掉，避免它以后一直冒出来
+      auto throwaway_future = client_->async_get_result(goal_handle);
     }
   }
+  future_goal_handle_ = std::shared_future<rclcpp_action::ClientGoalHandle<FollowPath>::SharedPtr>();
+  result_future_ = std::shared_future<rclcpp_action::Client<FollowPath>::WrappedResult>();
 }
 
 // 注册插件

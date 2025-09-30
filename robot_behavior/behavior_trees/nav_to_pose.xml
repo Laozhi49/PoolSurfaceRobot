@@ -1,8 +1,8 @@
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root BTCPP_format="4">
+  <BehaviorTree ID="NavigateToPoseTree">
     <Sequence>
-      <ComputePathToPose goal="{goal_pose}" path="{computed_path}" />
-      <!-- <FollowPath path="{computed_path}" /> -->
+      <ComputePathToPose goal="{goal_pose}" path="{path}" />
+      <FollowPath path="{path}" />
     </Sequence>
   </BehaviorTree>
 </root>

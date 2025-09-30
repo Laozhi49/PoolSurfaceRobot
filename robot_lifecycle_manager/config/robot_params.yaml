@@ -1,0 +1,62 @@
+robot_control:
+  ros__parameters:
+    cmd_vel_topic: "/cmd_vel"
+    camera_pose_topic: "/orbslam3/camera_pose"
+    aruco_pose_topic: "/aruco_pose"
+    projected_marker_topic: "/projected_marker"
+    imu_topic: "/imu_data"
+    map_frame: "map"
+    robot_frame: "base_link"
+    camera_frame: "camera_link"
+    aruco_marker_frame: "aruco_marker_frame"
+    pose_service_name: "get_robot_pose"
+    speed_service_name: "set_robot_speed"
+    rotation_action_name: "rotation"
+    movedistnace_action_name: "move_distance"
+    followpath_action_name: "follow_path"
+    followcoverage_action_name: "follow_coverage"
+    goal_tolerance: 0.2
+    Kp_: 2.5
+    Ki_: 0.01
+    Kd_: 0.5
+    
+pointcloud_to_2dmap:
+  ros__parameters:
+    pointcloud_topic: "/orbslam3/map_points"
+    camerapose_topic: "/orbslam3/camera_pose"
+    map_frame: "map"
+    robot_frame: "map"
+    map_topic: "/map"
+    map_resolution: 0.05
+    map_width: 20.0
+    map_height: 20.0
+    robot_height: 0.5
+    camera_height: 0.4
+    obstacle_threshold: 0.2
+    
+robot_costmap:
+  ros__parameters:
+    map_topic: "/map"
+    global_costmap_topic: "/global_costmap"
+    publish_frequency: 10.0
+    inflation_radius: 0.3
+
+robot_planner:
+  ros__parameters:
+    costmap_topic: "/global_costmap"
+    pose_service_name: "get_robot_pose"
+    action_name: "compute_path_to_pose"
+
+robot_behavior:
+  ros__parameters:
+    navigate_to_pose_name: "navigate_to_pose"
+    goal_pose_topic: "/goal_pose"
+
+robot_lifecycle_manager:
+  ros__parameters:
+    managed_nodes:
+      - /robot_control
+      # - /pointcloud_to_2dmap
+      - /robot_behavior
+      - /robot_costmap
+      - /robot_planner

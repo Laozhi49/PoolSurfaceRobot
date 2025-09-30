@@ -1,0 +1,8 @@
+# 请求：输入多边形顶点
+geometry_msgs/Point32[] polygon
+---
+# 结果：输出路径
+nav_msgs/Path path
+---
+# 反馈（比如百分比进度）
+float32 progress
